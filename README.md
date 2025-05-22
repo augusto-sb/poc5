@@ -1,0 +1,1 @@
+- a truly SPA (single page application) with a backend in Go

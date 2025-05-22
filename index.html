@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>SPA</title>
+	<style type="text/css">
+		body{
+			margin: 0;
+			padding: 0;
+		}
+		header,footer{
+			height: 80px;
+			width: 100%;
+			background-color: gray;
+			display: flex;
+		}
+		header button{
+			margin: auto;
+		}
+		footer span{
+			margin: auto;
+		}
+		div#main{
+			width: 100%;
+			min-height: calc(100vh - 160px);
+			display: flex;
+		}
+		div#main table,div{
+			margin: auto;
+		}
+		table {
+			font-family: Arial, Helvetica, sans-serif;
+			border-collapse: collapse;
+		}
+		table td, table th {
+			border: 1px solid #ddd;
+			padding: 8px;
+		}
+		table tr:nth-child(even){
+			background-color: #f2f2f2;
+		}
+		table tr:hover {
+			background-color: #ddd;
+		}
+		table th {
+			padding-top: 12px;
+			padding-bottom: 12px;
+			text-align: left;
+			background-color: #04AA6D;
+			color: white;
+		}
+		th div {
+			display: flex;
+			flex-direction: column;
+		}
+		th div span,input {
+			margin: auto;
+		}
+	</style>
+	<script type="text/javascript">
+		const basePath = '/api';
+		const resources = {
+			CARS: '/cars',
+		};
+		function myFunction(e, key){
+			console.log(e.value, key);
+		}
+		function changeHome(){
+			document.getElementById("main").innerHTML = '<div>Bienvenido</div>'
+			history.replaceState({}, '', '/')
+		}
+		async function deleteCurrent(){
+			if(confirm('¿Seguro?')){
+				const resp = await fetch(basePath+location.pathname, {method: 'DELETE'});
+				console.log(resp);
+			}
+		}
+		async function changeDetail(id){
+			const path = location.pathname+'/'+id
+			const resp = await fetch(basePath+path);
+			const body = await resp.json();
+
+			let table = '<table><thead><tr><td colspan="2"><button onclick="deleteCurrent()">Borrar</button><button>Actualizar</button></td></tr></thead><tbody>';
+			for(const k in body){
+				table += `<tr><th>${k}</th><td>${body[k]}</td></tr>`;
+			}
+			table += `</tbody></table>`;
+			document.getElementById("main").innerHTML = table
+			history.replaceState({}, '', path)
+		}
+		async function changeGeneric(path, page = 0, size = 2){
+			const params = new URLSearchParams({page,size});
+			//console.log(params.toString())
+			//showPath = path+'?page='+page+'&size='+size;
+			showPath = path+'?'+params.toString();
+			if(showPath === location.pathname+location.search){
+				//already here
+				return;
+			}
+			const resp = await fetch(basePath+showPath);
+			const body = await resp.json();
+			if(typeof body.Results !== 'object' || typeof body.Count !== 'number' || body.Results.length === 0){
+				console.log(body);alert();return;
+			}
+			const keys = Object.keys(body.Results[0]);
+			let table = '<table><thead><tr>';
+			for(const k of keys){
+				table += `<th><div><span>${k}</span><input type="text" onkeyup="myFunction(this,'${k}')" placeholder="Filter..."></div></th>`;
+			}
+			table += '<th>Actions</th></tr></thead><tbody>';
+			for(const r of body.Results){
+				table += '<tr>';
+				for(const k of keys){
+					table += '<td>'+r[k]+'</td>';
+				}
+				table += `<td><button onclick="changeDetail('${r.Id}')">Ver</button></td></tr>`;
+			}
+			table += `</tbody><tfoot><tr><td colspan="${keys.length}">Paginado: `;
+			//Paginado ${body.Count}
+			const paginas = Math.ceil( body.Count / size)
+			for(let i=0 ; i<paginas ; i++){
+				table += `<button onclick="changeGeneric('${path}',${i},${size})">${i}</button>`;
+			}
+			table +=`</td><td><button onclick="changeGenericCreate('${path}')">Crear</button></td></tr></tfoot></table>`;
+			document.getElementById("main").innerHTML = table
+			history.replaceState({}, '', showPath)
+		}
+		async function changeGenericCreate(resource){
+			const showPath = resource + '/create';
+			// validate
+			let valid = false;
+			for(key in resources){
+				if(resource === resources[key])valid = true;
+			}
+			if(!valid){
+				alert('invalid');
+				return;
+			}
+			document.getElementById("main").innerHTML = '<form><input type="submit">Crear</input></form>'
+			history.replaceState({}, '', showPath)
+		}
+		function validateBrowser(){
+			if(!history || !history.replaceState){
+				alert();
+			}
+			if(navigator.appCodeName !== "Mozilla" || !navigator.userAgent.includes('Firefox')){
+				alert('unsupported browser');
+				return;
+			}
+		}
+	</script>
+</head>
+<body>
+	<header>
+		<button onclick="changeHome()">Home</button>
+		<button onclick="changeGeneric(resources.CARS)">Cars</button>
+	</header>
+	<div id="main"></div>
+	<footer><span>Augusto Saldivar - <script>document.write(new Date().getFullYear())</script></span></footer>
+	<script type="text/javascript">
+		validateBrowser();
+		changeHome();
+	</script>
+</body>
+</html>
