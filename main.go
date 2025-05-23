@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	//"fmt"
+	"fmt"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -73,11 +75,18 @@ func getListParams(r *http.Request)(page uint, size uint){
 	return
 }
 
+func minUint(num1 uint, num2 uint)(uint){
+	if(num1 < num2){
+		return num1
+	}
+	return num2
+}
+
 func handleCars(w http.ResponseWriter, r *http.Request) {
 	page, size := getListParams(r);
 	//fmt.Println(page, size)
 	var rdata []any = []any{};
-	for _, v := range cars[(page*size):((page+1)*size)] {
+	for _, v := range cars[(page*size):minUint(((page+1)*size), uint(len(cars)))] {
 		rdata = append(rdata, v)
 	}
 	byteArr, err := json.Marshal(Response{Results: rdata, Count: uint(len(cars))})
@@ -112,6 +121,28 @@ func handleCar(w http.ResponseWriter, r *http.Request){
 
 func handleCarDelete(w http.ResponseWriter, r *http.Request){}
 
+func handleCarAdd(w http.ResponseWriter, r *http.Request){
+	defer r.Body.Close()
+	body, err1 := ioutil.ReadAll(r.Body);
+	if(err1 != nil){
+		//fmt.Println(err1)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err1.Error()))
+	}
+	//fmt.Println(string(body), uint(rand.Uint64()))
+	var newCar Car
+	err2 := json.Unmarshal(body, &newCar)
+	if(err2 != nil){
+		//fmt.Println(err2)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err2.Error()))
+	}
+	fmt.Println(newCar)
+	newCar.Id = uint(rand.Uint64());
+	cars = append(cars, newCar)
+	w.WriteHeader(http.StatusCreated)
+}
+
 func handleDefault(w http.ResponseWriter, r *http.Request) {
 	//lee el file cada vez! bueno para debug pero en prod cargar en meme!
 	http.ServeFile(w, r, indexLocation)
@@ -136,6 +167,7 @@ func main() {
 		mux.HandleFunc("/", handleDefault)
 	}
 	mux.HandleFunc("GET /api/cars", handleCars)
+	mux.HandleFunc("POST /api/cars", handleCarAdd)
 	mux.HandleFunc("GET /api/cars/{id}", handleCar)
 	mux.HandleFunc("DELETE /api/cars/{id}", handleCarDelete)
 	mux.HandleFunc("/favicon.ico", http.NotFound)

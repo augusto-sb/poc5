@@ -5,6 +5,10 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>SPA</title>
 	<style type="text/css">
+		:root {
+			--custom-color-grey: #f2f2f2;
+			--custom-color-green: #04AA6D;
+		}
 		body{
 			margin: 0;
 			padding: 0;
@@ -29,6 +33,23 @@
 		div#main table,div{
 			margin: auto;
 		}
+		form {
+			display: flex;
+			margin: auto;
+			flex-direction: column;
+			background-color: var(--custom-color-grey);
+		}
+		form input,label {
+			margin: 10px;
+		}
+		form input[type="submit"]{
+			background-color: var(--custom-color-green);
+			color: white;
+			padding: 12px 20px;
+			border: none;
+			border-radius: 4px;
+			cursor: pointer;
+		}
 		table {
 			font-family: Arial, Helvetica, sans-serif;
 			border-collapse: collapse;
@@ -38,7 +59,7 @@
 			padding: 8px;
 		}
 		table tr:nth-child(even){
-			background-color: #f2f2f2;
+			background-color: var(--custom-color-grey);
 		}
 		table tr:hover {
 			background-color: #ddd;
@@ -47,7 +68,7 @@
 			padding-top: 12px;
 			padding-bottom: 12px;
 			text-align: left;
-			background-color: #04AA6D;
+			background-color: var(--custom-color-green);
 			color: white;
 		}
 		th div {
@@ -137,9 +158,39 @@
 				alert('invalid');
 				return;
 			}
-			document.getElementById("main").innerHTML = '<form><input type="submit">Crear</input></form>'
-			history.replaceState({}, '', showPath)
+			document.getElementById("main").innerHTML = `<form onsubmit="event.preventDefault();createFun('${resource}', this);"><label for="lname">Name</label><input required type="text" id="lname" name="Name" placeholder="Name"><label for="lbrand">Brand</label><input type="text" id="lbrand" name="Brand" placeholder="Brand"><input required type="submit" value="Crear"></form>`;
+			history.replaceState({}, '', showPath);
 		}
+		function formDataToJsonStr(input){
+			const obj = {};
+			for(const [k,v] of input.entries()){
+				obj[k] = v;
+			}
+			return JSON.stringify(obj)
+		}
+		async function createFun(resource, form){
+			//return false; // no funca por async?
+			//console.log(resource, form);
+			const formData = new FormData(form)
+			//console.log(formData)
+			//for(const k of formData.keys()){console.log(k);}
+			for(const [k,v] of formData.entries()){
+				//console.log(k,v)
+			}
+			//const response = await fetch(basePath+resource, {method: 'POST', body: formData});
+			try{
+				const response = await fetch(basePath+resource, {method: 'POST', body: formDataToJsonStr(formData)});
+				console.log(response);
+				const body = await response.text();
+				console.log(body);
+				if(response.status===201){
+					alert('creado');
+				}
+			}catch(e){
+				console.log(e);
+				alert('error');
+			}
+		} 
 		function validateBrowser(){
 			if(!history || !history.replaceState){
 				alert();
