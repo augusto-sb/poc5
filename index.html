@@ -78,6 +78,14 @@
 		th div span,input {
 			margin: auto;
 		}
+		@media (orientation: portrait) {
+			header {
+				flex-direction: column;
+			}
+			div#main {
+				overflow-x: scroll;
+			}
+		}
 	</style>
 	<script type="text/javascript">
 		const basePath = '/api';
@@ -205,6 +213,7 @@
 				alert();
 			}
 			if(navigator.appCodeName !== "Mozilla" || !navigator.userAgent.includes('Firefox')){
+				console.log(navigator.userAgent, '---', navigator.appCodeName)
 				alert('unsupported browser');
 				return;
 			}
