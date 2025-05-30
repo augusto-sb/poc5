@@ -94,7 +94,12 @@
 		async function deleteCurrent(){
 			if(confirm('¿Seguro?')){
 				const resp = await fetch(basePath+location.pathname, {method: 'DELETE'});
-				console.log(resp);
+				if(resp.ok){
+					alert('borrado correctamente')
+					changeGeneric(resources.CARS)
+				}else{
+					alert('error')
+				}
 			}
 		}
 		async function changeDetail(id){
@@ -121,23 +126,27 @@
 			}
 			const resp = await fetch(basePath+showPath);
 			const body = await resp.json();
-			if(typeof body.Results !== 'object' || typeof body.Count !== 'number' || body.Results.length === 0){
+			if(typeof body.Results !== 'object' || typeof body.Count !== 'number'){
 				console.log(body);alert();return;
 			}
-			const keys = Object.keys(body.Results[0]);
 			let table = '<table><thead><tr>';
-			for(const k of keys){
-				table += `<th><div><span>${k}</span><input type="text" onkeyup="myFunction(this,'${k}')" placeholder="Filter..."></div></th>`;
-			}
-			table += '<th>Actions</th></tr></thead><tbody>';
-			for(const r of body.Results){
-				table += '<tr>';
+			if(body.Results.length === 0){
+				alert('vacio')
+			}else{
+				const keys = Object.keys(body.Results[0]);
 				for(const k of keys){
-					table += '<td>'+r[k]+'</td>';
+					table += `<th><div><span>${k}</span><input type="text" onkeyup="myFunction(this,'${k}')" placeholder="Filter..."></div></th>`;
 				}
-				table += `<td><button onclick="changeDetail('${r.Id}')">Ver</button></td></tr>`;
+				table += '<th>Actions</th></tr></thead><tbody>';
+				for(const r of body.Results){
+					table += '<tr>';
+					for(const k of keys){
+						table += '<td>'+r[k]+'</td>';
+					}
+					table += `<td><button onclick="changeDetail('${r.Id}')">Ver</button></td></tr>`;
+				}
+				table += `</tbody><tfoot><tr><td colspan="${keys.length}">Paginado: `;
 			}
-			table += `</tbody><tfoot><tr><td colspan="${keys.length}">Paginado: `;
 			//Paginado ${body.Count}
 			const paginas = Math.ceil( body.Count / size)
 			for(let i=0 ; i<paginas ; i++){
@@ -158,7 +167,7 @@
 				alert('invalid');
 				return;
 			}
-			document.getElementById("main").innerHTML = `<form onsubmit="event.preventDefault();createFun('${resource}', this);"><label for="lname">Name</label><input required type="text" id="lname" name="Name" placeholder="Name"><label for="lbrand">Brand</label><input type="text" id="lbrand" name="Brand" placeholder="Brand"><input required type="submit" value="Crear"></form>`;
+			document.getElementById("main").innerHTML = `<form onsubmit="event.preventDefault();createFun('${resource}', this);"><label for="lmodel">Model</label><input required type="text" id="lmodel" name="Model" placeholder="Model"><label for="lbrand">Brand</label><input type="text" id="lbrand" name="Brand" placeholder="Brand"><input required type="submit" value="Crear"></form>`;
 			history.replaceState({}, '', showPath);
 		}
 		function formDataToJsonStr(input){
